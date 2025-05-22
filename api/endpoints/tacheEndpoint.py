@@ -23,10 +23,11 @@ from flask import make_response
 from api import app,db,auth,authenticate
 
 
-UPLOAD_FOLDER = 'types'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'svg'}
+UPLOAD_FOLDER = 'fichiers'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg','pdf','mov', 'avi', 'mp4', 'flv', 'wmv', 'webm', 'mkv', 'svf','docx','xlsx'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 MYDIR = os.path.dirname(__file__)
+
 
 
 def allowed_file(filename):

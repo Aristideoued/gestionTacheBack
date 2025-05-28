@@ -18,4 +18,5 @@ twilio
 werkzeug
 glob2
 flask_migrate
+Flask-Migrate
 

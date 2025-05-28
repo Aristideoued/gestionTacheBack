@@ -8,11 +8,10 @@ from flask_cors import cross_origin
 import hashlib, uuid
 import os
 import base64
-import pdfcrowd
 import sys
 import os
 from datetime import datetime
-from models.tacheModel import Wallet
+from models.tacheModel import Tache
 import requests, json
 
 import smtplib

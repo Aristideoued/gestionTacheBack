@@ -9,10 +9,8 @@ import hashlib, uuid
 import os
 from datetime import datetime
 from models.roleModel import Role
-from models.departementModel import Transaction
-from models.projetModel import TransactionType
+from models.projetModel import Projet
 from models.userModel import User
-from models.tacheModel import Wallet
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -39,109 +37,28 @@ def allowed_file(filename):
 
 
 
-@app.route('/addTransaction' ,methods=['GET','POST'])
+@app.route('/addProjet' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def addTransaction():
+def addProjet():
     if request.method=='POST':
             data = request.get_json()
+            nom=data['nom']
+            description=data['description']
+            date_debut=data['date_debut']
+            date_fin_prevue=data['date_fin_prevue']
+            statut=data['statut']
+            responsable_id=int(data['responsable_id'])
             
-            emitter = int(data['emitter'])
-            amount = float(data['amount'])
-
-            emitter_compte=db.session.query(User).filter(User.id==emitter).first()
-            emitter_wallet=db.session.query(Wallet).filter(Wallet.user_id==emitter_compte.id).first()
-            
-            transaction_type_id = int(data['transaction_type_id'])
-            transaction_type= db.session.query(TransactionType).filter(TransactionType.id==transaction_type_id).first()
-
-
-            if transaction_type.type=="Transfert d'argent":
-                receiver = data['receiver']
-                moment=datetime.now()
-                receiver_compte=db.session.query(User).filter(User.phone==str(receiver)).first()
-                receiver_wallet=db.session.query(Wallet).filter(Wallet.user_id==receiver_compte.id).first()
-                if emitter_wallet.balance<amount:
-                    retour={"code":401,"Title":"Transfert d'argent","contenu":"Echec de transfert, solde insuffisant"}
-                    return make_response(jsonify(retour),401)
-                else:  
-                    receiver_wallet.balance=receiver_wallet.balance+amount
-                    emitter_wallet.balance=emitter_wallet.balance-amount
-                    trans=Transaction(receiver_compte.id,emitter_compte.id,amount,transaction_type_id,moment)
-                    db.session.add(receiver_wallet)
-                    db.session.add(emitter_wallet)
-                    db.session.add(trans)
-                    db.session.commit()
-                    retour={"code":200,"Title":"Transfert d'argent","contenu":"Transfert effectué avec succès"}
-                    return make_response(jsonify(retour),200)
-            
-            elif transaction_type.type=="Dépot d'argent":
-                receiver = data['receiver']
-                #code_agent = int(data['code_agent'])
-
-                moment=datetime.now()
-                role=db.session.query(Role).filter(Role.id==emitter_compte.role_id).first()
-                print("Role==> ",role.role)
-                if role.role=="admin":
-                    receiver_compte=db.session.query(User).filter(User.code_agent==int(receiver)).first()
-                    receiver_wallet=db.session.query(Wallet).filter(Wallet.user_id==receiver_compte.id).first()
-            
-                    receiver_wallet.balance=receiver_wallet.balance+amount
-                    #emitter_wallet.balance=emitter_wallet.balance-amount
-                    trans=Transaction(receiver_compte.id,emitter_compte.id,amount,transaction_type_id,moment)
-                    db.session.add(receiver_wallet)
-                    #db.session.add(emitter_wallet)
-                    db.session.add(trans)
-                    db.session.commit()
-                    retour={"code":200,"Title":"Dépot d'argent","contenu":"Dépot effectué avec succès"}
-                    return make_response(jsonify(retour),200)
-
-                
-                elif role.role=="agent":
-                    if emitter_wallet.balance<amount:
-                        retour={"code":401,"Title":"Depot d'argent","contenu":"Echec de depot, solde insuffisant"}
-                        return make_response(jsonify(retour),401)
-                    else:
-                        receiver_compte=db.session.query(User).filter(User.phone==str(receiver)).first()
-                        receiver_wallet=db.session.query(Wallet).filter(Wallet.user_id==receiver_compte.id).first()
-                
-                        receiver_wallet.balance=receiver_wallet.balance+amount
-                        emitter_wallet.balance=emitter_wallet.balance-amount
-                        trans=Transaction(receiver_compte.id,emitter_compte.id,amount,transaction_type_id,moment)
-                        db.session.add(receiver_wallet)
-                        db.session.add(emitter_wallet)
-                        db.session.add(trans)
-                        db.session.commit()
-                        retour={"code":200,"Title":"Dépot d'argent","contenu":"Dépot effectué avec succès"}
-                        return make_response(jsonify(retour),200)
-                else:
-                    print("Le role ",role)
-                    retour={"code":401,"Title":"Depot d'argent","contenu":"Echec de depot, opération non autorisée"}
-                    return make_response(jsonify(retour),401)
-
-                   
-            
-
-            elif transaction_type.type=="Retrait d'argent":
-                receiver = int(data['receiver'])
-                #code_agent = int(data['code_agent'])
-                
-                moment=datetime.now()
-                receiver_compte=db.session.query(User).filter(User.code_agent==receiver).first()
-                receiver_wallet=db.session.query(Wallet).filter(Wallet.user_id==receiver_compte.id).first()
-                if emitter_wallet.balance<amount:
-                    retour={"code":401,"Title":"Retrait d'argent","contenu":"Echec de retrait, solde insuffisant"}
-                    return make_response(jsonify(retour),401)
-                else:
-                    receiver_wallet.balance=receiver_wallet.balance+amount
-                    emitter_wallet.balance=emitter_wallet.balance-amount
-                    trans=Transaction(receiver_compte.id,emitter_compte.id,amount,transaction_type_id,moment)
-                    db.session.add(receiver_wallet)
-                    db.session.add(emitter_wallet)
-                    db.session.add(trans)
-                    db.session.commit()
-                    retour={"code":200,"Title":"Retrait d'argent","contenu":"Retrait effectué avec succès"}
-                    return make_response(jsonify(retour),200)
+                    
+            proj=Projet(nom,description,date_debut,date_fin_prevue,statut,responsable_id)
+           
+            db.session.add(proj)
+            db.session.commit()
+            retour={"code":200,"Title":"Ajout d'un projet","contenu":"Projet ajouté avec succès"}
+            return make_response(jsonify(retour),200)
+    
+           
                  
     else:
       retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode post"}
@@ -150,26 +67,26 @@ def addTransaction():
 
 
 
-@app.route('/delete/transaction' ,methods=['GET','POST'])
+@app.route('/delete/projet' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def delete_Transaction():
+def delete_Projet():
     if request.method=='POST':
             
             data = request.get_json()
 
             id=int(data['id'])
 
-            user1=db.session.query(Transaction).filter(Transaction.id==id).first()
+            user1=db.session.query(Projet).filter(Projet.id==id).first()
             if user1:
-                Transaction.query.filter_by(id=id).delete()
+                Projet.query.filter_by(id=id).delete()
                 db.session.commit()
 
-                retour={"code":200,"title":"Suppression d'une Transaction","contenu":"Transaction supprimée avec succès"}
+                retour={"code":200,"title":"Suppression d'un Projet","contenu":"Projet supprimé avec succès"}
                 return make_response(jsonify(retour),200)
             else :
 
-                retour={"code":401,"title":"Echec de suppression","contenu":"Transaction non trouvée"}
+                retour={"code":401,"title":"Echec de suppression","contenu":"Projet non trouvé"}
                 return make_response(jsonify(retour),401)
     else:
       retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode post"}
@@ -178,53 +95,79 @@ def delete_Transaction():
 
 
 
-@app.route('/transactions' ,methods=['GET','POST'])
+
+@app.route('/all/projets' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def getTransaction():
+def getProjet():
     if request.method=='GET':
             historiques=[]
-            historique = Transaction.query.all()
+            historique = Projet.query.all()
             #user=db.session.query(User).all()
 
             for u in historique:
-                #print(u.nom)
-                transactionType=db.session.query(TransactionType).filter(TransactionType.id==u.transaction_type_id).first()
-                receiver=db.session.query(User).filter(User.id==u.receiver).first()
-                emitter=db.session.query(User).filter(User.id==u.emitter).first()
 
-                historiques.append({"id":u.id,"receiver_id":receiver.id,"emitter_id":emitter.id,"receiver":receiver.firstname+" "+receiver.lastname,"emitter":emitter.firstname+" "+emitter.lastname,"receiver_phone":receiver.phone,"emitter_phone":emitter.phone,"transaction_type":transactionType.type,"amount":u.amount,"date":u.created_at})
+                employe=db.session.query(User).filter(User.id==u.user_id).first()
+                
+                
+                historiques.append({"date_fin_prevue":u.date_fin_prevue,"statut":u.statut,"id":u.id,"date_debut":u.date_debut,"nom":u.nom,"description":u.description,"responsable":employe.nom+" "+employe.prenom})
 
 
-            retour={"code":200,"title":"Liste des Transactions","contenu":historiques,"taille":len(historiques)}
+            retour={"code":200,"title":"Liste des projets","contenu":historiques,"taille":len(historiques)}
             #print(users[0])
             return make_response(jsonify(retour),200)
     
 
-
-@app.route('/transactionById' ,methods=['GET','POST'])
+@app.route('/projets' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def getTransactionById():
+def getProjetParPage():
+    if request.method=='GET':
+            historiques=[]
+           
+            #user=db.session.query(User).all()
+              
+
+            page = request.args.get('page', default=1, type=int)
+            per_page = request.args.get('per_page', default=60, type=int)
+            #cat = request.args.get('categorie', type=int)
+            historique=Projet.query.paginate(page=page, per_page=per_page, error_out=False)
+           
+
+            for u in historique:
+
+
+                employe=db.session.query(User).filter(User.id==u.user_id).first()
+                
+                
+                historiques.append({"date_fin_prevue":u.date_fin_prevue,"statut":u.statut,"id":u.id,"date_debut":u.date_debut,"nom":u.nom,"description":u.description,"responsable":employe.nom+" "+employe.prenom})
+
+            retour={"code":200,"title":"Liste des projets","contenu":historiques,"taille":len(historiques)}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
+
+@app.route('/projetById' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getProjetById():
     if request.method=='POST':
             clients=[]
             data = request.get_json()
 
             id=int(data['id'])
 
-            u=db.session.query(Transaction).filter(Transaction.id==id).first()
-            transactionType=db.session.query(TransactionType).filter(TransactionType.id==u.transaction_type_id).first()
-            receiver=db.session.query(User).filter(User.id==u.receiver).first()
-            emitter=db.session.query(User).filter(User.id==u.emitter).first()
-
-            clients.append({"id":u.id,"receiver_id":receiver.id,"emitter_id":emitter.id,"receiver":receiver.firstname+" "+receiver.lastname,"emitter":emitter.firstname+" "+emitter.lastname,"receiver_phone":receiver.phone,"emitter_phone":emitter.phone,"transaction_type":transactionType.type,"amount":u.amount,"date":u.created_at})
+            u=db.session.query(Projet).filter(Projet.id==id).first()
+            employe=db.session.query(User).filter(User.id==u.user_id).first()
+            
+            clients.append({"date_fin_prevue":u.date_fin_prevue,"statut":u.statut,"id":u.id,"date_debut":u.date_debut,"nom":u.nom,"description":u.description,"responsable":employe.nom+" "+employe.prenom})
 
 
     
                 #print(u.nom)
 
 
-            retour={"code":200,"title":"Transaction "+str(id),"contenu":clients}
+            retour={"code":200,"title":"Projet "+str(id),"contenu":clients}
             #print(users[0])
             return make_response(jsonify(retour),200)
 
@@ -234,29 +177,30 @@ def getTransactionById():
     
 
 
-@app.route('/transaction/emitter' ,methods=['GET','POST'])
+@app.route('/projetByUser' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def getTransactionEmitter():
+def getProjetByUser():
     if request.method=='POST':
             clients=[]
             data = request.get_json()
 
-            user=int(data['user'])
+            user_id=int(data['user_id'])
 
-            client=db.session.query(Transaction).filter(Transaction.emitter==user)
+            proj=db.session.query(Projet).filter(Projet.user_id==user_id)
+            employe=db.session.query(User).filter(User.id==user_id).first()
+
+            for u in proj:
+                 
             
+                clients.append({"date_fin_prevue":u.date_fin_prevue,"statut":u.statut,"id":u.id,"date_debut":u.date_debut,"nom":u.nom,"description":u.description,"responsable":employe.nom+" "+employe.prenom})
 
-            for u in client:
+
+    
                 #print(u.nom)
-                transactionType=db.session.query(TransactionType).filter(TransactionType.id==u.transaction_type_id).first()
-                receiver=db.session.query(User).filter(User.id==u.receiver).first()
-                emitter=db.session.query(User).filter(User.id==u.emitter).first()
-
-                clients.append({"id":u.id,"receiver_id":receiver.id,"emitter_id":emitter.id,"receiver":receiver.firstname+" "+receiver.lastname,"emitter":emitter.firstname+" "+emitter.lastname,"receiver_phone":receiver.phone,"emitter_phone":emitter.phone,"transaction_type":transactionType.type,"amount":u.amount,"date":u.created_at})
 
 
-            retour={"code":200,"title":"Transaction du user "+str(user),"contenu":clients,"taille":len(clients)}
+            retour={"code":200,"title":"Projet "+str(id),"contenu":clients}
             #print(users[0])
             return make_response(jsonify(retour),200)
 
@@ -265,61 +209,43 @@ def getTransactionEmitter():
       return make_response(jsonify(retour),403)
     
 
+ 
 
-@app.route('/transaction/receiver' ,methods=['GET','POST'])
+@app.route('/update/projet' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def getTransactionReceiver():
-    if request.method=='POST':
-            clients=[]
-            data = request.get_json()
-
-            user=int(data['user'])
-
-            client=db.session.query(Transaction).filter(Transaction.receiver==user)
-            
-
-            for u in client:
-                #print(u.nom)
-                transactionType=db.session.query(TransactionType).filter(TransactionType.id==u.transaction_type_id).first()
-                receiver=db.session.query(User).filter(User.id==u.receiver).first()
-                emitter=db.session.query(User).filter(User.id==u.emitter).first()
-
-                clients.append({"id":u.id,"receiver_id":receiver.id,"emitter_id":emitter.id,"receiver":receiver.firstname+" "+receiver.lastname,"emitter":emitter.firstname+" "+emitter.lastname,"receiver_phone":receiver.phone,"emitter_phone":emitter.phone,"transaction_type":transactionType.type,"amount":u.amount,"date":u.created_at})
-
-
-            retour={"code":200,"title":"Transaction du user "+str(user),"contenu":clients,"taille":len(clients)}
-            #print(users[0])
-            return make_response(jsonify(retour),200)
-
-    else:
-      retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode POST"}
-      return make_response(jsonify(retour),403)
-    
-
-@app.route('/delete/transaction' ,methods=['GET','POST'])
-@auth.login_required
-@cross_origin(origin='*')
-def delete_transaction():
+def update_Projet():
     if request.method=='POST':
             test=False
             data = request.get_json()
 
             id=int(data['id'])
+            nom=data['nom']
+            description=data['description']
+            date_debut=data['date_debut']
+            date_fin_prevue=data['date_fin_prevue']
+            statut=data['statut']
+            responsable_id=int(data['responsable_id'])
 
-            user1=db.session.query(Transaction).filter(Transaction.id==id).first()
+            user1=db.session.query(Projet).filter(Projet.id==id).first()
             
             if user1:
-                Transaction.query.filter_by(id=id).delete()
+                user1.date_debut=date_debut
+                user1.nom=nom
+                user1.date_fin_prevue=date_fin_prevue
+                user1.statut=statut
+                user1.responsable_id=responsable_id
+                user1.description=description
+                db.session.add(user1)
                 db.session.commit()
                
                 
 
-                retour={"code":200,"title":"Suppression d'une transaction","contenu":"Transaction supprimée avec succès"}
+                retour={"code":200,"title":"Modification d'un Projet","contenu":"Projet modifié avec succès"}
                 return make_response(jsonify(retour),200)
             else :
 
-                retour={"code":401,"title":"Echec de suppression","contenu":"Transaction non trouvée"}
+                retour={"code":401,"title":"Echec de modification","contenu":"Projet non trouvé"}
                 return make_response(jsonify(retour),401)
 
 

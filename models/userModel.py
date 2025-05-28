@@ -19,7 +19,7 @@ class User(db.Model):
     password=db.Column(db.String(255))
     code=db.Column(db.String(6))
     titre=db.Column(db.String(255))
-    statut=db.Column(db.String(1))
+    statut=db.Column(db.Integer)
    
 
     
@@ -29,7 +29,7 @@ class User(db.Model):
         self.prenom=prenom
         self.phone=phone
         self.email=email
-        self.statut=0
+        self.statut=1
         self.password=password
         self.titre=titre
         self.role_id=role_id

@@ -8,14 +8,13 @@ from flask_cors import cross_origin
 import hashlib, uuid
 import os
 from datetime import datetime
-from models.roleModel import Role
-from models.reunionModel import Reunion
+from models.abonnementModel import Abonnement
 from models.userModel import User
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-import json
+
 from models.adminModel import Admin
 from api import app,db
 from flask import make_response
@@ -37,35 +36,27 @@ def allowed_file(filename):
 
 
 
-@app.route('/addReunion' ,methods=['GET','POST'])
+@app.route('/addAbonnement' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def addReunion():
+def addAbonnement():
     if request.method=='POST':
             data = request.get_json()
+            description=data['description']
+            statut=data['statut']
+            
 
-            ordre_du_jour=data['ordre_du_jour']
-            date=data['date']
-            heure_debut=data['heure_debut']
-            heure_fin=data['heure_fin']
-            participants=data['participants']
-            participant=json.loads(participants)
-
-            now = datetime.now()
-
-            # Convertir en string
-            date_str = now.strftime("%Y-%m-%d %H:%M:%S")
-                        
-            created_at=date_str
-
-           
+            formule=data['formule']
+            dateExpiration=data['dateExpiration']
+            montantAnnuel=int(data['montantAnnuel'])
+            montantMensuel=int(data['montantMensuel'])
             
                     
-            proj=Reunion(ordre_du_jour,date,heure_debut,heure_fin,participant,created_at)
+            proj=Abonnement(formule,dateExpiration,statut,montantAnnuel,montantMensuel,description)
            
             db.session.add(proj)
             db.session.commit()
-            retour={"code":200,"Title":"Ajout d'un Reunion","contenu":"Reunion ajouté avec succès"}
+            retour={"code":200,"Title":"Ajout d'un Abonnement","contenu":"Abonnement ajouté avec succès"}
             return make_response(jsonify(retour),200)
     
            
@@ -77,26 +68,26 @@ def addReunion():
 
 
 
-@app.route('/delete/reunion' ,methods=['GET','POST'])
+@app.route('/delete/abonnement' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def delete_Reunion():
+def delete_Abonnement():
     if request.method=='POST':
             
             data = request.get_json()
 
             id=int(data['id'])
 
-            user1=db.session.query(Reunion).filter(Reunion.id==id).first()
+            user1=db.session.query(Abonnement).filter(Abonnement.id==id).first()
             if user1:
-                Reunion.query.filter_by(id=id).delete()
+                Abonnement.query.filter_by(id=id).delete()
                 db.session.commit()
 
-                retour={"code":200,"title":"Suppression d'un Reunion","contenu":"Reunion supprimé avec succès"}
+                retour={"code":200,"title":"Suppression d'un Abonnement","contenu":"Abonnement supprimé avec succès"}
                 return make_response(jsonify(retour),200)
             else :
 
-                retour={"code":401,"title":"Echec de suppression","contenu":"Reunion non trouvé"}
+                retour={"code":401,"title":"Echec de suppression","contenu":"Abonnement non trouvé"}
                 return make_response(jsonify(retour),401)
     else:
       retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode post"}
@@ -106,31 +97,29 @@ def delete_Reunion():
 
 
 
-@app.route('/all/reunions' ,methods=['GET','POST'])
+@app.route('/all/abonnements' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def getReunion():
+def getAbonnement():
     if request.method=='GET':
             historiques=[]
-            historique = Reunion.query.all()
+            historique = Abonnement.query.all()
             #user=db.session.query(User).all()
 
             for u in historique:
-
           
-                
-                historiques.append({"ordre_du_jour":u.ordre_du_jour,"date":u.date,"heure":u.heure_debu,"heure_fin":u.heure_fin,"participants":u.participants})
+                historiques.append({"formule":u.formule,"statut":u.statut,"dateExpiration":u.dateExpiration,"montantAnnuel":u.montantAnnuel,"montantMensuel":u.montantMensuel,"description":u.description})
 
 
-            retour={"code":200,"title":"Liste des Reunions","contenu":historiques,"taille":len(historiques)}
+            retour={"code":200,"title":"Liste des Abonnements","contenu":historiques,"taille":len(historiques)}
             #print(users[0])
             return make_response(jsonify(retour),200)
     
 
-@app.route('/reunions' ,methods=['GET','POST'])
+@app.route('/abonnements' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def getReunionParPage():
+def getAbonnementParPage():
     if request.method=='GET':
             historiques=[]
            
@@ -140,41 +129,38 @@ def getReunionParPage():
             page = request.args.get('page', default=1, type=int)
             per_page = request.args.get('per_page', default=60, type=int)
             #cat = request.args.get('categorie', type=int)
-            historique=Reunion.query.paginate(page=page, per_page=per_page, error_out=False)
+            historique=Abonnement.query.paginate(page=page, per_page=per_page, error_out=False)
            
 
             for u in historique:
 
 
-                
-                
-                historiques.append({"ordre_du_jour":u.ordre_du_jour,"date":u.date,"heure":u.heure_debu,"heure_fin":u.heure_fin,"participants":u.participants})
+                historiques.append({"formule":u.formule,"statut":u.statut,"dateExpiration":u.dateExpiration,"montantAnnuel":u.montantAnnuel,"montantMensuel":u.montantMensuel,"description":u.description})
 
-            retour={"code":200,"title":"Liste des Reunions","contenu":historiques,"taille":len(historiques)}
+            retour={"code":200,"title":"Liste des Abonnements","contenu":historiques,"taille":len(historiques)}
             #print(users[0])
             return make_response(jsonify(retour),200)
 
 
-@app.route('/reunionById' ,methods=['GET','POST'])
+@app.route('/abonnementById' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def getReunionById():
+def getAbonnementById():
     if request.method=='POST':
             clients=[]
             data = request.get_json()
 
             id=int(data['id'])
 
-            u=db.session.query(Reunion).filter(Reunion.id==id).first()
-            
-            clients.append({"ordre_du_jour":u.ordre_du_jour,"date":u.date,"heure":u.heure_debu,"heure_fin":u.heure_fin,"participants":u.participants})
+            u=db.session.query(Abonnement).filter(Abonnement.id==id).first()
+            clients.append({"formule":u.formule,"statut":u.statut,"dateExpiration":u.dateExpiration,"montantAnnuel":u.montantAnnuel,"montantMensuel":u.montantMensuel,"description":u.description})
 
 
     
                 #print(u.nom)
 
 
-            retour={"code":200,"title":"Reunion "+str(id),"contenu":clients}
+            retour={"code":200,"title":"Abonnement "+str(id),"contenu":clients}
             #print(users[0])
             return make_response(jsonify(retour),200)
 
@@ -184,41 +170,47 @@ def getReunionById():
     
 
 
-@app.route('/update/reunion' ,methods=['GET','POST'])
+
+ 
+
+@app.route('/update/abonnement' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
-def update_Reunion():
+def update_Abonnement():
     if request.method=='POST':
             test=False
             data = request.get_json()
 
             id=int(data['id'])
-            ordre_du_jour=data['ordre_du_jour']
-            date=data['date']
-            heure_debut=data['heure_debut']
-            heure_fin=data['heure_fin']
-            participants=data['participants']
-            participant=json.loads(participants)
+            description=data['description']
+            statut=data['statut']
+            
 
-            user1=db.session.query(Reunion).filter(Reunion.id==id).first()
+            formule=data['formule']
+            dateExpiration=data['dateExpiration']
+            montantAnnuel=int(data['montantAnnuel'])
+            montantMensuel=int(data['montantMensuel'])
+            
+
+            user1=db.session.query(Abonnement).filter(Abonnement.id==id).first()
             
             if user1:
-                user1.ordre_du_jour=ordre_du_jour
-                user1.date=date
-                user1.heure_debut=heure_debut
-                user1.heure_fin=heure_fin
-                user1.participants=participant
-               
+                user1.formule=formule
+                user1.dateExpiration=dateExpiration
+                user1.montantAnnuel=montantAnnuel
+                user1.statut=statut
+                user1.montantMensuel=montantMensuel
+                user1.description=description
                 db.session.add(user1)
                 db.session.commit()
                
                 
 
-                retour={"code":200,"title":"Modification d'une Reunion","contenu":"Reunion modifiée avec succès"}
+                retour={"code":200,"title":"Modification d'un Abonnement","contenu":"Abonnement modifié avec succès"}
                 return make_response(jsonify(retour),200)
             else :
 
-                retour={"code":401,"title":"Echec de modification","contenu":"Reunion non trouvée"}
+                retour={"code":401,"title":"Echec de modification","contenu":"Abonnement non trouvé"}
                 return make_response(jsonify(retour),401)
 
 

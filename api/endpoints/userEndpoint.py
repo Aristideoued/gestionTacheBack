@@ -22,9 +22,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 from models.userModel import User
-from models.adminModel import Admin
+from models.departementModel import Departement
 from models.roleModel import Role
-from models.tacheModel import Wallet
+from models.tacheModel import Tache
 
 
 UPLOAD_FOLDER = 'fichiers'
@@ -40,64 +40,30 @@ def addUser():
     if request.method=='POST':
 
             data = request.get_json()
-            us=[]
-            firstname=data['firstname']
-            lastname=data['lastname']
+            nom=data["nom"]
+            prenom=data["prenom"]
+            
+            departement_id=int(data['departement_id'])
+            titre=data["titre"]
+            
             phone=data["phone"]
             email=data['email']
-            bithdate=data['bithdate']
-            cnib_pasport=data["cnib_pasport"]
-            city=data["city"]
             password=data['password']
             role_id=int(data['role_id'])
-            code_agent=None
 
-            if data['code_agent']!='':
-                code_agent=int(data['code_agent'])
-            
-
-
-            
+           
             hashed_password = hashlib.sha256((password).encode("utf-8")).hexdigest()
 
             user=db.session.query(User).filter(User.email==email).first()
             user2=db.session.query(User).filter(User.phone==phone).first()
 
             if user or user2:
-                retour={"code":401,"title":"Ajout d'un utilisateur","contenu":"Utilisateur non ajouté , un compte avec cet email/telephone existe deja "}
+                retour={"code":401,"title":"Ajout d'un utilisateur","contenu":"Utilisateur non ajouté , un compte avec cet email/telephone existe deja"}
                 return make_response(jsonify(retour),401)
             else:
 
                 
-                user=User(firstname,lastname,phone,email,bithdate,cnib_pasport,city,code_agent,hashed_password,role_id)
-                db.session.add(user)
-                db.session.commit()
-
-                wallet=Wallet(user.id,0)
-                db.session.add(wallet)
-                db.session.commit()
-                us.append(user)
-
-                code=str(random.randint(100000, 999999))
-                destinataire=email
-                expediteur= "contact@codingagain.com"
-                sujet = "Code de verfication de votre compte Roonko"
-                message = MIMEMultipart()
-                message['From'] = expediteur
-                message['To'] = destinataire
-                message['Subject'] = sujet
-                corps_du_message = "Cher utilisateur,\n\n\nVeuillez utiliser ce code pour valider votre inscription. ,\n\n\nCode de validation : "+str(code)
-                message.attach(MIMEText(corps_du_message, 'plain'))
-                serveur_smtp = "mail.codingagain.com"
-                port_smtp = 465
-                nom_utilisateur = "contact@codingagain.com"
-                mot_de_passe = "2885351Aristide12@"
-                s = smtplib.SMTP_SSL(host='mail.codingagain.com', port=465)
-                s.login(nom_utilisateur, mot_de_passe)
-                texte = message.as_string()
-                s.sendmail(expediteur, destinataire, texte)
-                s.quit()
-                user.code=code
+                user=User(nom,prenom,phone,email,hashed_password,role_id,departement_id,titre)
                 db.session.add(user)
                 db.session.commit()
                 #retour={"code":200,"title":"Envoie de code au User","contenu":"Code envoyé avec succès"}
@@ -125,12 +91,19 @@ def getUserById():
             id=int(data['id'])
 
             f=db.session.query(User).filter(User.id==id).first()
+            statut=""
             if f:
+                if f.statut==1:
+                    statut=="Actif"
+                else:
+                    statut="Inactif"
 
 
                 role=db.session.query(Role).filter(Role.id==f.role_id).first()
+                dep=db.session.query(Departement).filter(Departement.id==f.departement_id).first()
 
-                users.append({"id":f.id,"code_agent":f.code_agent,"firstname":f.firstname,"lastname":f.lastname,"phone":f.phone,"email":f.email,"cnib_pasport":f.cnib_pasport,"is_active":f.is_active,"bithdate":f.bithdate,"city":f.city,"role_id":f.role_id,"role":role.role,"verifyed_at":f.verifyed_at})
+
+                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":f.permissions})
 
                 retour={"code":200,"title":"User "+str(id),"contenu":users}
                 #print(users[0])
@@ -164,17 +137,13 @@ def delete_user():
             if user1:
                 User.query.filter_by(id=id).delete()
                 db.session.commit()
-               
-                
-
+            
                 retour={"code":200,"title":"Suppression de compte User","contenu":"Compte supprimé avec succès"}
                 return make_response(jsonify(retour),200)
             else :
 
                 retour={"code":401,"title":"Echec de suppression","contenu":"Compte non trouvé"}
                 return make_response(jsonify(retour),401)
-
-
 
 
     else:
@@ -335,31 +304,29 @@ def update_user_password():
 @cross_origin(origin='*')
 def update_user():
     if request.method=='POST':
-            test=False
+            
             data = request.get_json()
-
-            firstname=data['firstname']
-            lastname=data['lastname']
-            telephone=data["phone"]
+            nom=data["nom"]
+            prenom=data["prenom"]
+            
+            departement_id=int(data['departement_id'])
+            titre=data["titre"]
+            
+            phone=data["phone"]
             email=data['email']
-            bithdate=data['bithdate']
-            cnib_pasport=data["cnib_pasport"]
-            city=data["city"]
-        
             role_id=int(data['role_id'])
-            code_agent=int(data['code_agent'])
+        
             id=int(data['id'])
 
             user1=db.session.query(User).filter(User.id==id).first()
             if user1:
-                user1.firstname=firstname
-                user1.lastname=lastname
-                user1.phone=telephone
+                user1.nom=nom
+                user1.prenom=prenom
+                user1.phone=phone
                 user1.email=email
-                user1.bithdate=bithdate
-                user1.cnib_pasport=cnib_pasport
-                user1.city=city
-                user1.code_agent=code_agent
+                user1.titre=titre
+                user1.departement_id=departement_id
+                
                 user1.role_id=role_id
                 db.session.add(user1)
                 db.session.commit()
@@ -375,8 +342,38 @@ def update_user():
       return make_response(jsonify(retour),403)
 
 
+@app.route('/update/user/statut' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def update_user_statut():
+    if request.method=='POST':
+            
+            data = request.get_json()
+            
+            statut=int(data['statut'])
+        
+            id=int(data['id'])
 
-@app.route('/users' ,methods=['GET','POST'])
+            user1=db.session.query(User).filter(User.id==id).first()
+            if user1:
+                user1.statut=statut
+                
+                db.session.add(user1)
+                db.session.commit()
+
+                retour={"code":200,"title":"Modification de compte","contenu":"Compte modifié avec succès"}
+                return make_response(jsonify(retour),200)
+            else :
+
+                retour={"code":401,"title":"Echec de modification","contenu":"Compte non trouvé"}
+                return make_response(jsonify(retour),401)
+    else:
+      retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode post"}
+      return make_response(jsonify(retour),403)
+
+
+
+@app.route('/all/users' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
 def getUser():
@@ -386,9 +383,50 @@ def getUser():
             #user=db.session.query(User).all()
 
             for f in user:
+                statut=""
+
+                if f.statut==1:
+                    statut=="Actif"
+                else:
+                    statut="Inactif"
                 #print(u.nom)
                 role=db.session.query(Role).filter(Role.id==f.role_id).first()
-                users.append({"id":f.id,"code_agent":f.code_agent,"firstname":f.firstname,"lastname":f.lastname,"phone":f.phone,"email":f.email,"cnib_pasport":f.cnib_pasport,"is_active":f.is_active,"bithdate":f.bithdate,"city":f.city,"role_id":f.role_id,"role":role.role,"verifyed_at":f.verifyed_at})
+                dep=db.session.query(Departement).filter(Departement.id==f.departement_id).first()
+
+                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":f.permissions})
+            retour={"code":200,"title":"Liste des users","contenu":users,"taille":len(users)}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
+    else:
+      retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode GET"}
+      return make_response(jsonify(retour),403)
+
+
+
+@app.route('/users' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getUserPerPage():
+    if request.method=='GET':
+            users=[]
+            page = request.args.get('page', default=1, type=int)
+            per_page = request.args.get('per_page', default=60, type=int)
+            #cat = request.args.get('categorie', type=int)
+            user=User.query.paginate(page=page, per_page=per_page, error_out=False)
+           
+            #user=db.session.query(User).all()
+
+            for f in user:
+                #print(u.nom)
+                if f.statut==1:
+                    statut=="Actif"
+                else:
+                    statut="Inactif"
+                role=db.session.query(Role).filter(Role.id==f.role_id).first()
+                dep=db.session.query(Departement).filter(Departement.id==f.departement_id).first()
+
+                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":f.permissions})
             retour={"code":200,"title":"Liste des users","contenu":users,"taille":len(users)}
             #print(users[0])
             return make_response(jsonify(retour),200)

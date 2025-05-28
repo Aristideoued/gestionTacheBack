@@ -5,23 +5,55 @@
 from api import app as application
 from api import db
 
-from models.parcoursModel import Parcours
-from models.clientModel import Client
+import hashlib, uuid
+
+from models.roleModel import Role
+from models.userModel import User
 from models.adminModel import Admin
-from models.certificationModel import Certification
-from models.messageModel import Message
-from models.fichierModel import Fichier
-from models.tarificationModel import Tarification
+from models.departementModel import Departement
+from models.projetModel import Projet
+from models.tacheModel import Tache
+
+
+from models.commentaireModel import Commentaire
+from models.abonnementModel import Abonnement
+from models.monitoringModel import Monitoring
+from models.pieceModel import Piece
+
+from models.reunionModel import Reunion
+from models.historiqueModel import Historique
+from models.beneficiaireModel import Beneficiaire
+
 from models.notificationModel import Notification
-from models.experienceModel import Experience
-from models.referenceModel import Reference
-from models.categorieModel import Categorie
+
+
 
 import logging
 from logging.handlers import RotatingFileHandler
 
 from api.endpoints import *
 
+
+
+def create_admin():
+    with application.app_context():
+        db.create_all()
+        # Vérifie si un utilisateur admin existe déjà
+        admin = Admin.query.filter_by(username='admin').first()
+        if admin:
+            print("Le compte admin existe déjà.")
+            return
+
+        # Crée un utilisateur admin par défaut
+        admin = Admin(
+            nom="Ouedraogo",
+            prenom="Aristide",
+            telephone="54007038",
+            username='admin',
+            password = hashlib.sha256(("admin").encode("utf-8")).hexdigest())
+        db.session.add(admin)
+        db.session.commit()
+        print("Compte admin créé avec succès !")
 
 @application.route('/createTable',methods=['GET'])
 def create_table2():
@@ -46,9 +78,11 @@ handler = RotatingFileHandler('app.log', maxBytes=10000, backupCount=1)
 handler.setLevel(logging.INFO)
 app.logger.addHandler(handler)
 
-if __name__ == "__main__":
-    application.run(host='0.0.0.0')
 
+if __name__ == "__main__":
+    create_admin()
+    
+    application.run(host='0.0.0.0')
 
 #from api import app,db
 

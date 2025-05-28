@@ -106,7 +106,7 @@ def upload_file(user_id,tache_id):
 
 @app.route('/fileById/<id>' ,methods=['GET','POST'])
 @cross_origin(origin='*')
-def getUserImage(id):
+def getFileById(id):
     if request.method=='GET':
 
             piece=db.session.query(Piece).filter(Piece.id==id).first()
@@ -133,7 +133,7 @@ def getUserImage(id):
 
 @app.route('/getFile/<tache_id>/' ,methods=['GET','POST'])
 @cross_origin(origin='*')
-def getUserImage(tache_id):
+def getTacheFile(tache_id):
     if request.method=='GET':
             tache=db.session.query(Tache).filter(Tache.id==tache_id).first()
             files=[]

@@ -56,13 +56,23 @@ def addTache():
             
             priorite=data['priorite']
 
-            tache=Tache(user_id,titre,date_echeance,description,priorite,created_at)
-            db.session.add(tache)
-            db.session.commit()
+            user1=db.session.query(User).filter(User.id==user_id).first()
+            if user1.statut==1:
+                 
 
-            retour={"code":200,"title":"Ajout d'une Tache","contenu":"Tache ajoutée avec succes"}
-            return make_response(jsonify(retour),200)
-                
+
+                tache=Tache(user_id,titre,date_echeance,description,priorite,created_at)
+                db.session.add(tache)
+                db.session.commit()
+
+                retour={"code":200,"title":"Ajout d'une Tache","contenu":"Tache ajoutée avec succes"}
+                return make_response(jsonify(retour),200)
+            
+            else:
+                retour={"code":401,"title":"Ajout d'une Tache","contenu":user1.nom+ " "+user1.prenom+" est actuellement inactif(ve)"}
+                return make_response(jsonify(retour),401)
+                 
+                    
     else:
       retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode post"}
       return make_response(jsonify(retour),403)

@@ -55,9 +55,6 @@ def addBeneficiaire():
             email=data["email"]
             telephone=data["telephone"]
                     
-            
-            
-
             benef=Beneficiaire(nom,prenom,structure,email,telephone)
             db.session.add(benef)
             db.session.commit()

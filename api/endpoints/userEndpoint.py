@@ -79,6 +79,46 @@ def addUser():
 
 
 
+@app.route('/userByDepartement' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getUserByDepartement():
+    if request.method=='POST':
+            users=[]
+            data = request.get_json()
+
+            departement_id=int(data['departement_id'])
+
+            user=db.session.query(User).filter(User.departement_id==departement_id)
+            for f in user:
+
+                statut=""
+                if f:
+                    if f.statut==1:
+                        statut=="Actif"
+                    else:
+                        statut="Inactif"
+
+
+                    role=db.session.query(Role).filter(Role.id==f.role_id).first()
+
+
+                    users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":role.permissions})
+
+                    retour={"code":200,"title":"User "+str(id),"contenu":users}
+                    #print(users[0])
+                    return make_response(jsonify(retour),200)
+                else:
+                    retour={"code":404,"title":"User "+str(id),"contenu":"User non trouvé"}
+                    #print(users[0])
+                    return make_response(jsonify(retour),404)
+
+
+    else:
+      retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode POST"}
+      return make_response(jsonify(retour),403)
+
+
 
 @app.route('/userById' ,methods=['GET','POST'])
 @auth.login_required
@@ -103,7 +143,7 @@ def getUserById():
                 dep=db.session.query(Departement).filter(Departement.id==f.departement_id).first()
 
 
-                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":f.permissions})
+                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":role.permissions})
 
                 retour={"code":200,"title":"User "+str(id),"contenu":users}
                 #print(users[0])
@@ -393,7 +433,7 @@ def getUser():
                 role=db.session.query(Role).filter(Role.id==f.role_id).first()
                 dep=db.session.query(Departement).filter(Departement.id==f.departement_id).first()
 
-                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":f.permissions})
+                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":role.permissions})
             retour={"code":200,"title":"Liste des users","contenu":users,"taille":len(users)}
             #print(users[0])
             return make_response(jsonify(retour),200)
@@ -426,7 +466,7 @@ def getUserPerPage():
                 role=db.session.query(Role).filter(Role.id==f.role_id).first()
                 dep=db.session.query(Departement).filter(Departement.id==f.departement_id).first()
 
-                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":f.permissions})
+                users.append({"id":f.id,"statut":statut,"nom":f.nom,"prenom":f.prenom,"departement":dep.nom,"titre":f.titre,"phone":f.phone,"email":f.email,"role_id":f.role_id,"role":role.role,"permissions":role.permissions})
             retour={"code":200,"title":"Liste des users","contenu":users,"taille":len(users)}
             #print(users[0])
             return make_response(jsonify(retour),200)

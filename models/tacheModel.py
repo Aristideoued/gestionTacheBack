@@ -10,6 +10,7 @@ class Tache(db.Model):
     __tablename__='taches'
     id=db.Column(db.Integer,primary_key=True)
     user_id=db.Column(db.Integer)
+    projet_id=db.Column(db.Integer)
     titre=db.Column(db.String(200))
     priorite=db.Column(db.String(200))
     statut=db.Column(db.String(100))
@@ -19,7 +20,7 @@ class Tache(db.Model):
     description=db.Column(db.Text)
 
 
-    def __init__(self,user_id,titre,date_echeance,description,priorite,created_at):
+    def __init__(self,user_id,titre,date_echeance,description,priorite,created_at,projet_id):
         self.user_id=user_id
         self.titre=titre
         self.date_echeance=date_echeance
@@ -28,3 +29,4 @@ class Tache(db.Model):
         self.created_at=created_at
         self.date_fin=None
         self.priorite=priorite
+        self.projet_id=projet_id

@@ -8,6 +8,7 @@ from flask_cors import cross_origin
 import hashlib, uuid
 import os
 from datetime import datetime
+from models.projetModel import Projet
 from models.tacheModel import Tache
 
 import smtplib
@@ -56,12 +57,17 @@ def addTache():
             
             priorite=data['priorite']
 
+            projet_id=None
+            if "projet_id" in data:
+                 projet_id=int(data['projet_id'])
+                 
+
             user1=db.session.query(User).filter(User.id==user_id).first()
             if user1.statut==1:
                  
 
 
-                tache=Tache(user_id,titre,date_echeance,description,priorite,created_at)
+                tache=Tache(user_id,titre,date_echeance,description,priorite,created_at,projet_id)
                 db.session.add(tache)
                 db.session.commit()
 
@@ -123,9 +129,11 @@ def getTacheAll():
             for u in tache:
 
                 employe=db.session.query(User).filter(User.id==u.user_id).first()
+                projet=db.session.query(Projet).filter(Projet.id==u.projet_id).first()
+
 
                
-                taches.append({"id":u.id,"titre":u.titre,"priorite":u.priorite,"date_echeance":u.date_echeance,"description":u.description,"date_creation":u.created_at,"responsable":employe.nom+" "+employe.prenom})
+                taches.append({"id":u.id,"titre":u.titre,"projet":projet.nom,"priorite":u.priorite,"date_echeance":u.date_echeance,"description":u.description,"date_creation":u.created_at,"responsable":employe.nom+" "+employe.prenom})
 
 
             retour={"code":200,"title":"Liste des Taches","contenu":taches,"taille":len(tache)}
@@ -152,9 +160,14 @@ def getTache():
             for u in tache:
 
                 employe=db.session.query(User).filter(User.id==u.user_id).first()
+                projet=db.session.query(Projet).filter(Projet.id==u.projet_id).first()
+
 
                
-                taches.append({"id":u.id,"titre":u.titre,"priorite":u.priorite,"date_echeance":u.date_echeance,"description":u.description,"date_creation":u.created_at,"responsable":employe.nom+" "+employe.prenom})
+                taches.append({"id":u.id,"titre":u.titre,"projet":projet.nom,"priorite":u.priorite,"date_echeance":u.date_echeance,"description":u.description,"date_creation":u.created_at,"responsable":employe.nom+" "+employe.prenom})
+
+
+               
 
 
             retour={"code":200,"title":"Liste des Taches","contenu":taches,"taille":len(tache)}
@@ -176,12 +189,17 @@ def getTacheById():
             f=db.session.query(Tache).filter(Tache.id==id).first()
 
             employe=db.session.query(User).filter(User.id==f.user_id).first()
+            projet=db.session.query(Projet).filter(Projet.id==f.projet_id).first()
+
+
+               
+
 
 
 
     
                 #print(u.nom)
-            clients.append({"id":f.id,"titre":f.titre,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at,"responsable":employe.nom+" "+employe.prenom})
+            clients.append({"id":f.id,"titre":f.titre,"projet":projet.nom,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at,"responsable":employe.nom+" "+employe.prenom})
 
 
             retour={"code":200,"title":"Tache "+str(id),"contenu":clients}
@@ -212,6 +230,13 @@ def updateTransactionType():
             priorite=data['priorite']
             
             tache=db.session.query(Tache).filter(Tache.id==id).first()
+
+            projet_id =tache.projet_id
+            
+            if "projet_id"  in data:
+                 
+                projet_id=int(data["projet_id"])
+            
             if tache:
                 tache.user_id=user_id
                 tache.date_echeance=date_echeance
@@ -219,6 +244,7 @@ def updateTransactionType():
                 tache.description=description
                 tache.priorite=priorite
                 tache.titre=titre
+                tache.projet_id=projet_id
 
                 db.session.add(tache)
                 db.session.commit()

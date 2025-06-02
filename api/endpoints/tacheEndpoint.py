@@ -9,6 +9,7 @@ import hashlib, uuid
 import os
 from datetime import datetime
 from models.projetModel import Projet
+from models.tacheLenModel import TacheLen
 from models.tacheModel import Tache
 
 import smtplib
@@ -34,6 +35,27 @@ MYDIR = os.path.dirname(__file__)
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+
+@app.route('/taille/taches' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenTache():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(TacheLen).filter(TacheLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
 
 
 
@@ -70,6 +92,10 @@ def addTache():
                 tache=Tache(user_id,titre,date_echeance,description,priorite,created_at,projet_id)
                 db.session.add(tache)
                 db.session.commit()
+                abLen=db.session.query(TacheLen).filter(TacheLen.id==1).first()
+                abLen.taille+=1
+                db.session.add(abLen)
+                db.session.commit()
 
                 retour={"code":200,"title":"Ajout d'une Tache","contenu":"Tache ajoutée avec succes"}
                 return make_response(jsonify(retour),200)
@@ -99,6 +125,10 @@ def delete_Tache():
             user1=db.session.query(Tache).filter(Tache.id==id).first()
             if user1:
                 Tache.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(TacheLen).filter(TacheLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'une Tache","contenu":"Tache supprimée avec succès"}
@@ -191,16 +221,11 @@ def getTacheById():
             employe=db.session.query(User).filter(User.id==f.user_id).first()
             projet=db.session.query(Projet).filter(Projet.id==f.projet_id).first()
 
+            if projet:
+                clients.append({"id":f.id,"titre":f.titre,"projet":projet.nom,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at,"responsable":employe.nom+" "+employe.prenom})
 
-               
-
-
-
-
-    
-                #print(u.nom)
-            clients.append({"id":f.id,"titre":f.titre,"projet":projet.nom,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at,"responsable":employe.nom+" "+employe.prenom})
-
+            else:
+                clients.append({"id":f.id,"titre":f.titre,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at,"responsable":employe.nom+" "+employe.prenom})
 
             retour={"code":200,"title":"Tache "+str(id),"contenu":clients}
             #print(users[0])
@@ -264,3 +289,74 @@ def updateTransactionType():
 
 
 
+
+
+@app.route('/tacheByUserId' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getTacheByUserId():
+    if request.method=='POST':
+            clients=[]
+            data = request.get_json()
+
+            user_id=int(data['user_id'])
+
+            tache=db.session.query(Tache).filter(Tache.user_id==user_id)
+
+            for f in tache:
+                 
+
+                #employe=db.session.query(User).filter(User.id==f.user_id).first()
+                projet=db.session.query(Projet).filter(Projet.id==f.projet_id).first()
+
+                if  projet:
+                    clients.append({"id":f.id,"titre":f.titre,"projet":projet.nom,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at})
+                else:
+                    #print(u.nom)
+                    clients.append({"id":f.id,"titre":f.titre,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at})
+
+
+            retour={"code":200,"title":"Tache "+str(id),"contenu":clients,"taille":len(clients)}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
+    else:
+      retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode POST"}
+      return make_response(jsonify(retour),403)
+    
+
+
+@app.route('/tacheByStatut' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getTacheByStatut():
+    if request.method=='POST':
+            clients=[]
+            data = request.get_json()
+
+            statut=data['statut']
+
+            tache=db.session.query(Tache).filter(Tache.statut==statut)
+
+            for f in tache:
+                 
+
+                #employe=db.session.query(User).filter(User.id==f.user_id).first()
+                projet=db.session.query(Projet).filter(Projet.id==f.projet_id).first()
+
+                if  projet:
+                    clients.append({"id":f.id,"titre":f.titre,"projet":projet.nom,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at})
+                else:
+                    #print(u.nom)
+                    clients.append({"id":f.id,"titre":f.titre,"priorite":f.priorite,"date_echeance":f.date_echeance,"description":f.description,"date_creation":f.created_at})
+
+
+            retour={"code":200,"title":"Tache "+str(id),"contenu":clients,"taille":len(clients)}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
+    else:
+      retour={"code":403,"title":"Methode non authorisée","contenu":"Cet endpoint accepte que la methode POST"}
+      return make_response(jsonify(retour),403)
+    
+    

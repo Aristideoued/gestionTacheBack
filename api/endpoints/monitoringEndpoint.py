@@ -8,6 +8,7 @@ from flask_cors import cross_origin
 import hashlib, uuid
 import os
 from datetime import datetime
+from models.monitoringLenModel import MonitoringLen
 from models.monitoringModel import Monitoring
 from models.userModel import User
 import smtplib
@@ -34,6 +35,24 @@ def allowed_file(filename):
 
 
 
+@app.route('/taille/monitorings' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenMonitoring():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(MonitoringLen).filter(MonitoringLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
 
 
 @app.route('/addMonitoring' ,methods=['GET','POST'])
@@ -61,8 +80,13 @@ def addMonitoring():
             
                 db.session.add(proj)
                 db.session.commit()
+                abLen=db.session.query(MonitoringLen).filter(MonitoringLen.id==1).first()
+                abLen.taille+=1
+                db.session.add(abLen)
+                db.session.commit()
                 retour={"code":200,"Title":"Ajout d'un Monitoring","contenu":"Monitoring ajouté avec succès"}
                 return make_response(jsonify(retour),200)
+            
         
            
                  
@@ -86,6 +110,10 @@ def delete_Monitoring():
             user1=db.session.query(Monitoring).filter(Monitoring.id==id).first()
             if user1:
                 Monitoring.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(MonitoringLen).filter(MonitoringLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un Monitoring","contenu":"Monitoring supprimé avec succès"}

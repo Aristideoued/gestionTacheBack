@@ -11,6 +11,7 @@ import base64
 import sys
 import os
 from datetime import datetime
+from models.HistoriqueLenModel import HistoriqueLen
 from models.tacheModel import Tache
 import requests, json
 
@@ -40,6 +41,25 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/taille/historiques' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenHistorique():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(HistoriqueLen).filter(HistoriqueLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
 
 
 @app.route('/addHistorique' ,methods=['GET','POST'])
@@ -62,6 +82,10 @@ def addHistorique():
 
             comm=Historique(user_id,tache_id,type_action,description,created_at)
             db.session.add(comm)
+            db.session.commit()
+            abLen=db.session.query(HistoriqueLen).filter(HistoriqueLen.id==1).first()
+            abLen.taille+=1
+            db.session.add(abLen)
             db.session.commit()
 
 
@@ -88,6 +112,10 @@ def delete_Historique():
             user1=db.session.query(Historique).filter(Historique.id==id).first()
             if user1:
                 Historique.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(HistoriqueLen).filter(HistoriqueLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un Historique","contenu":"Historique supprimé avec succès"}

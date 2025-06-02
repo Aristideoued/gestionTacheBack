@@ -11,6 +11,7 @@ import base64
 import sys
 import os
 from datetime import datetime
+from models.notificationLenModel import NotificationLen
 from models.tacheModel import Tache
 import requests, json
 
@@ -40,6 +41,25 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/taille/notifications' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenNotif():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(NotificationLen).filter(NotificationLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
 
 
 @app.route('/addNotification' ,methods=['GET','POST'])
@@ -62,6 +82,10 @@ def addNotification():
 
             notif=Notification(message,type,user_id,created_at)
             db.session.add(notif)
+            db.session.commit()
+            abLen=db.session.query(NotificationLen).filter(NotificationLen.id==1).first()
+            abLen.taille+=1
+            db.session.add(abLen)
             db.session.commit()
 
 
@@ -88,6 +112,10 @@ def delete_Notification():
             user1=db.session.query(Notification).filter(Notification.id==id).first()
             if user1:
                 Notification.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(NotificationLen).filter(NotificationLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un Notification","contenu":"Notification supprimé avec succès"}

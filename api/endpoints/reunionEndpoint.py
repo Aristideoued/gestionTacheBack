@@ -8,6 +8,7 @@ from flask_cors import cross_origin
 import hashlib, uuid
 import os
 from datetime import datetime
+from models.reunionLenModel import ReunionLen
 from models.roleModel import Role
 from models.reunionModel import Reunion
 from models.userModel import User
@@ -34,6 +35,25 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+
+@app.route('/taille/reunions' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenReunion():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(ReunionLen).filter(ReunionLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
 
 
 
@@ -65,6 +85,10 @@ def addReunion():
            
             db.session.add(proj)
             db.session.commit()
+            abLen=db.session.query(ReunionLen).filter(ReunionLen.id==1).first()
+            abLen.taille+=1
+            db.session.add(abLen)
+            db.session.commit()
             retour={"code":200,"Title":"Ajout d'un Reunion","contenu":"Reunion ajouté avec succès"}
             return make_response(jsonify(retour),200)
     
@@ -90,6 +114,10 @@ def delete_Reunion():
             user1=db.session.query(Reunion).filter(Reunion.id==id).first()
             if user1:
                 Reunion.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(ReunionLen).filter(ReunionLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un Reunion","contenu":"Reunion supprimé avec succès"}

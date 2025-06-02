@@ -8,6 +8,7 @@ from flask_cors import cross_origin
 import hashlib, uuid
 import os
 from datetime import datetime
+from models.abonnementLenModel import AbonnementLen
 from models.abonnementModel import Abonnement
 from models.userModel import User
 import smtplib
@@ -33,7 +34,25 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/taille/abonnements' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenAbonnement():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(AbonnementLen).filter(AbonnementLen.id==1).first()
 
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+    
 
 
 @app.route('/addAbonnement' ,methods=['GET','POST'])
@@ -56,6 +75,13 @@ def addAbonnement():
            
             db.session.add(proj)
             db.session.commit()
+
+            abLen=db.session.query(AbonnementLen).filter(AbonnementLen.id==1).first()
+            abLen.taille+=1
+            db.session.add(abLen)
+            db.session.commit()
+
+
             retour={"code":200,"Title":"Ajout d'un Abonnement","contenu":"Abonnement ajouté avec succès"}
             return make_response(jsonify(retour),200)
     
@@ -81,6 +107,10 @@ def delete_Abonnement():
             user1=db.session.query(Abonnement).filter(Abonnement.id==id).first()
             if user1:
                 Abonnement.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(AbonnementLen).filter(AbonnementLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un Abonnement","contenu":"Abonnement supprimé avec succès"}

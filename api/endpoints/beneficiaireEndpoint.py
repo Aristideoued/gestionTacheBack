@@ -11,6 +11,7 @@ import base64
 import sys
 import os
 from datetime import datetime
+from models.beneficiaireLenModel import BeneficiaireLen
 from models.tacheModel import Tache
 import requests, json
 
@@ -42,6 +43,26 @@ def allowed_file(filename):
 
 
 
+@app.route('/taille/beneficiaires' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenBeneficiaire():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(BeneficiaireLen).filter(BeneficiaireLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
+
 @app.route('/addBeneficiaire' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
@@ -57,6 +78,11 @@ def addBeneficiaire():
                     
             benef=Beneficiaire(nom,prenom,structure,email,telephone)
             db.session.add(benef)
+            db.session.commit()
+
+            abLen=db.session.query(BeneficiaireLen).filter(BeneficiaireLen.id==1).first()
+            abLen.taille+=1
+            db.session.add(abLen)
             db.session.commit()
 
 
@@ -83,6 +109,10 @@ def delete_beneficiaire():
             user1=db.session.query(Beneficiaire).filter(Beneficiaire.id==id).first()
             if user1:
                 Beneficiaire.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(BeneficiaireLen).filter(BeneficiaireLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un beneficiaire","contenu":"beneficiaire supprimé avec succès"}

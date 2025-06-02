@@ -11,6 +11,7 @@ import hashlib, uuid
 import os
 from datetime import datetime
 from models.adminModel import Admin
+from models.roleLenModel import RoleLen
 from models.roleModel import Role
 
 from api import app,db
@@ -31,6 +32,25 @@ def allowed_file(filename):
 
 
 
+@app.route('/taille/roles' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenRole():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(RoleLen).filter(RoleLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
 
 @app.route('/addRole' ,methods=['GET','POST'])
 @auth.login_required
@@ -49,6 +69,10 @@ def addRole():
             else:
                 newRole=Role(libele,permissions)
                 db.session.add(newRole)
+                db.session.commit()
+                abLen=db.session.query(RoleLen).filter(RoleLen.id==1).first()
+                abLen.taille+=1
+                db.session.add(abLen)
                 db.session.commit()
                 retour={"code":200,"title":"Ajout d'un role","contenu":"Role ajouté avec succes"}
                 return make_response(jsonify(retour),200)
@@ -127,6 +151,10 @@ def delete_Role():
                   # db.session.commit()
 
                 Role.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(RoleLen).filter(RoleLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un Role","contenu":"Role supprimé avec succès"}

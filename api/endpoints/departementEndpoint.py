@@ -11,6 +11,7 @@ import base64
 import sys
 import os
 from datetime import datetime
+from models.departementLenModel import DepartementLen
 from models.tacheModel import Tache
 import requests, json
 
@@ -40,6 +41,24 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+@app.route('/taille/departements' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenDepartement():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(DepartementLen).filter(DepartementLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
 
 
 @app.route('/addDepartement' ,methods=['GET','POST'])
@@ -53,6 +72,10 @@ def addDepartement():
             
             dep=Departement(nom)
             db.session.add(dep)
+            db.session.commit()
+            abLen=db.session.query(DepartementLen).filter(DepartementLen.id==1).first()
+            abLen.taille+=1
+            db.session.add(abLen)
             db.session.commit()
 
 
@@ -79,6 +102,10 @@ def delete_Departement():
             user1=db.session.query(Departement).filter(Departement.id==id).first()
             if user1:
                 Departement.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(DepartementLen).filter(DepartementLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un Departement","contenu":"Departement supprimé avec succès"}

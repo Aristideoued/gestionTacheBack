@@ -21,6 +21,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from models.pieceLenModel import PieceLen
 from models.userModel import User
 from models.tacheModel import Tache
 from models.pieceModel import Piece
@@ -41,6 +42,25 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+
+@app.route('/taille/pieces' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenPiece():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(PieceLen).filter(PieceLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
 
 @app.route('/saveFile/<user_id>/<tache_id>', methods=['GET', 'POST'])
 @cross_origin(origin='*')
@@ -76,6 +96,10 @@ def upload_file(user_id,tache_id):
                 piece=Piece(user_id,tache_id,file.filename,created_at)
                 
                 db.session.add(piece)
+                db.session.commit()
+                abLen=db.session.query(PieceLen).filter(PieceLen.id==1).first()
+                abLen.taille+=1
+                db.session.add(abLen)
                 db.session.commit()
     
                 retour={"code":200,"title":"Fichier chargé","contenu":"Fichier chargé"}

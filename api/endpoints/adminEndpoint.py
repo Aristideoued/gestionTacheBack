@@ -9,12 +9,32 @@ from flask_cors import cross_origin
 import hashlib, uuid
 import os
 from datetime import datetime
+from models.adminLenModel import AdminLen
 from models.adminModel import Admin
 from api import app,db
 from flask import make_response
 from api import app,db,auth,authenticate
 
 
+
+@app.route('/taille/admins' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenAdmin():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(AdminLen).filter(AdminLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
 
 
 @app.route('/registerAdmin' ,methods=['GET','POST'])
@@ -41,6 +61,10 @@ def registerAdmin():
             else :
                 user=Admin(nom,prenom,username,hashed_password,telephone)
                 db.session.add(user)
+                db.session.commit()
+                abLen=db.session.query(AdminLen).filter(AdminLen.id==1).first()
+                abLen.taille+=1
+                db.session.add(abLen)
                 db.session.commit()
                 retour={"code":200,"title":"Creation de compte","contenu":"Compte crée avec succes"}
                 return make_response(jsonify(retour),200)

@@ -11,6 +11,7 @@ import base64
 import sys
 import os
 from datetime import datetime
+from models.commentaireLenModel import CommentaireLen
 from models.tacheModel import Tache
 import requests, json
 
@@ -41,6 +42,26 @@ def allowed_file(filename):
 
 
 
+@app.route('/taille/commentaires' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenCommentaire():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(CommentaireLen).filter(CommentaireLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
+
 @app.route('/addCommentaire' ,methods=['GET','POST'])
 @auth.login_required
 @cross_origin(origin='*')
@@ -65,6 +86,10 @@ def addCommentaire():
 
             comm=Commentaire(user_id,tache_id,contenue,created_at)
             db.session.add(comm)
+            db.session.commit()
+            abLen=db.session.query(CommentaireLen).filter(CommentaireLen.id==1).first()
+            abLen.taille+=1
+            db.session.add(abLen)
             db.session.commit()
 
 
@@ -91,6 +116,10 @@ def delete_Commentaire():
             user1=db.session.query(Commentaire).filter(Commentaire.id==id).first()
             if user1:
                 Commentaire.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(CommentaireLen).filter(CommentaireLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
 
                 retour={"code":200,"title":"Suppression d'un Commentaire","contenu":"Commentaire supprimé avec succès"}

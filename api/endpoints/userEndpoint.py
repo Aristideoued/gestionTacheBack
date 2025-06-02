@@ -21,6 +21,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from models.userLenModel import UserLen
 from models.userModel import User
 from models.departementModel import Departement
 from models.roleModel import Role
@@ -31,6 +32,28 @@ UPLOAD_FOLDER = 'fichiers'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg','pdf','mov', 'avi', 'mp4', 'flv', 'wmv', 'webm', 'mkv', 'svf','docx','xlsx'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 MYDIR = os.path.dirname(__file__)
+
+
+@app.route('/taille/users' ,methods=['GET','POST'])
+@auth.login_required
+@cross_origin(origin='*')
+def getLenUser():
+    if request.method=='GET':
+            historiques=[]
+            lenAb=db.session.query(UserLen).filter(UserLen.id==1).first()
+
+            #user=db.session.query(User).all()
+
+           
+          
+            historiques.append({"taille":lenAb.taille})
+
+
+            retour={"code":200,"title":"La taille","contenu":historiques}
+            #print(users[0])
+            return make_response(jsonify(retour),200)
+
+
 
 
 @app.route('/userRegister' ,methods=['GET','POST'])
@@ -65,6 +88,10 @@ def addUser():
                 
                 user=User(nom,prenom,phone,email,hashed_password,role_id,departement_id,titre)
                 db.session.add(user)
+                db.session.commit()
+                abLen=db.session.query(UserLen).filter(UserLen.id==1).first()
+                abLen.taille+=1
+                db.session.add(abLen)
                 db.session.commit()
                 #retour={"code":200,"title":"Envoie de code au User","contenu":"Code envoyé avec succès"}
                 #return make_response(jsonify(retour),200)
@@ -176,6 +203,10 @@ def delete_user():
             
             if user1:
                 User.query.filter_by(id=id).delete()
+                db.session.commit()
+                abLen=db.session.query(UserLen).filter(UserLen.id==1).first()
+                abLen.taille-=1
+                db.session.add(abLen)
                 db.session.commit()
             
                 retour={"code":200,"title":"Suppression de compte User","contenu":"Compte supprimé avec succès"}
